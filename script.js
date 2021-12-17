@@ -54,16 +54,35 @@ const loadingMessageOver = () => {
   body.removeChild(body.lastChild);
 };
 
+async function loadGiphyByWeather(weather) {
+  const img = document.querySelector('img');
+  const giphy = await fetch(
+    `https://api.giphy.com/v1/gifs/translate?s=${weather}&api_key=CUkT5V2SsV1JP3l05wHNCYNFDKKX7wrx`
+  );
+  const processedGiphy = giphy.json();
+  processedGiphy.then((gif) => {
+    img.src = gif.data.images.original.url;
+    console.log(img.src);
+  });
+}
+
 async function retrieveDataForLocation(location) {
   try {
     const data = await fetch(
       `https://api.openweathermap.org/data/2.5/weather?q=${location}&appid=3e79bfb50cc96045241305c0e397eef4`,
       { mode: 'cors' }
     );
-    return data.json();
+    if (data.status === 200) {
+      return data.json();
+    }
+    if (data.status === 400) {
+      throw new Error('City cannot be empty!');
+    }
+    if (data.status === 404) {
+      throw new Error(`${location} is not a valid city!`);
+    }
   } catch (err) {
-    console.log(err);
-    return err;
+    alert(err);
   }
 }
 
@@ -74,7 +93,6 @@ async function processWeatherData(location) {
     return { main, weather, name };
   } catch (err) {
     console.log(err);
-    return err;
   }
 }
 
@@ -90,9 +108,11 @@ async function createDisplayData(location) {
       processedData.main.temp_max
     );
     generateLinesInPreferredUnit();
+    await loadGiphyByWeather(`${processedData.weather[0].main} weather`);
     loadingMessageOver();
   } catch (err) {
     console.log(err);
+    loadingMessageOver();
   }
 }
 
